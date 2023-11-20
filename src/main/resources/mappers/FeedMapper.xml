@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.green.greengram.feed.FeedMapper">
+
+    <insert id="insFeed" useGeneratedKeys="true" keyProperty="ifeed">
+        INSERT INTO t_feed
+        SET iuser = #{iuser}
+        , contents = #{contents}
+        , location = #{location}
+    </insert>
+
+    <!-- 로그인한 iuser, 보고자하는 프로필 주인iuser -->
+    <select id="selFeed">
+        SELECT TF.ifeed, TF.contents, TF.location, TU.iuser
+        , TU.nm AS writer, TF.created_at AS createdAt
+        , if(C.ifeed > 0, 1, 0) AS isFav
+        FROM t_feed TF
+        INNER JOIN t_user TU
+        ON TF.iuser = TU.iuser
+        LEFT JOIN t_favorite C
+        ON TF.ifeed = C.ifeed
+        AND C.iuser = #{loginedIuser}
+        <if test="targetIuser > 0">
+        WHERE TF.iuser = #{targetIuser}
+        </if>
+        ORDER BY TF.ifeed DESC
+        LIMIT #{startIdx}, #{rowCount}
+    </select>
+
+    <insert id="insFeedPic">
+        INSERT INTO t_feed_pics
+        (ifeed,pic)
+        VALUES
+        <foreach collection="pics" item="pic" separator=",">
+            (#{ifeed},#{pic})
+        </foreach>
+    </insert>
+
+        <!-- t_favorite -->
+        <delete id="delFeedFav">
+            DELETE
+            FROM t_favorite
+            WHERE ifeed = #{ifeed} AND iuser = #{iuser}
+        </delete>
+
+    <insert id="insFeedFav">
+        INSERT INTO t_favorite
+        SET ifeed = #{ifeed}
+            , iuser = #{iuser}
+    </insert>
+
+
+    <select id="selFeedPics">
+        SELECT ifeed, pic
+        FROM t_feed_pics
+        WHERE ifeed in (
+        <foreach collection="list" item="ifeed"  separator=",">
+            #{ifeed}
+        </foreach>
+        )
+    </select>
+
+</mapper>
